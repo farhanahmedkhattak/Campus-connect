@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import RoleSwitcher from './components/ui/RoleSwitcher';
 import LeftSidebar from './components/layout/LeftSidebar';
 import RightSidebar from './components/layout/RightSidebar';
 import MobileNav from './components/layout/MobileNav';
 import Header from './components/layout/Header';
+import Toast from './components/ui/Toast';
 
 import FeedView from './components/feed/FeedView';
 import CreatePostModal from './components/feed/CreatePostModal';
@@ -37,13 +38,117 @@ export default function App() {
   const [currentTab, setCurrentTab] = useState('home');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [toast, setToast] = useState(null);
 
-  // Core App State
-  const [posts, setPosts] = useState(INITIAL_POSTS);
-  const [announcements, setAnnouncements] = useState(INITIAL_ANNOUNCEMENTS);
-  const [polls, setPolls] = useState(INITIAL_POLLS);
-  const [pastPapers, setPastPapers] = useState(INITIAL_PAST_PAPERS);
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  // Helper for displaying notifications
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => {
+      setToast((prev) => (prev?.message === message ? null : prev));
+    }, 3500);
+  };
+
+  // State initialization with localStorage fallback
+  const [posts, setPosts] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cc_posts');
+      return saved ? JSON.parse(saved) : INITIAL_POSTS;
+    } catch {
+      return INITIAL_POSTS;
+    }
+  });
+
+  const [announcements, setAnnouncements] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cc_announcements');
+      return saved ? JSON.parse(saved) : INITIAL_ANNOUNCEMENTS;
+    } catch {
+      return INITIAL_ANNOUNCEMENTS;
+    }
+  });
+
+  const [polls, setPolls] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cc_polls');
+      return saved ? JSON.parse(saved) : INITIAL_POLLS;
+    } catch {
+      return INITIAL_POLLS;
+    }
+  });
+
+  const [pastPapers, setPastPapers] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cc_past_papers');
+      return saved ? JSON.parse(saved) : INITIAL_PAST_PAPERS;
+    } catch {
+      return INITIAL_PAST_PAPERS;
+    }
+  });
+
+  const [notifications, setNotifications] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cc_notifications');
+      return saved ? JSON.parse(saved) : INITIAL_NOTIFICATIONS;
+    } catch {
+      return INITIAL_NOTIFICATIONS;
+    }
+  });
+
+  // Sync to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('cc_posts', JSON.stringify(posts));
+    } catch (e) {
+      console.warn('LocalStorage error:', e);
+    }
+  }, [posts]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('cc_announcements', JSON.stringify(announcements));
+    } catch (e) {
+      console.warn('LocalStorage error:', e);
+    }
+  }, [announcements]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('cc_polls', JSON.stringify(polls));
+    } catch (e) {
+      console.warn('LocalStorage error:', e);
+    }
+  }, [polls]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('cc_past_papers', JSON.stringify(pastPapers));
+    } catch (e) {
+      console.warn('LocalStorage error:', e);
+    }
+  }, [pastPapers]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('cc_notifications', JSON.stringify(notifications));
+    } catch (e) {
+      console.warn('LocalStorage error:', e);
+    }
+  }, [notifications]);
+
+  // Reset demo data to clean defaults
+  const handleResetData = () => {
+    localStorage.removeItem('cc_posts');
+    localStorage.removeItem('cc_announcements');
+    localStorage.removeItem('cc_polls');
+    localStorage.removeItem('cc_past_papers');
+    localStorage.removeItem('cc_notifications');
+    setPosts(INITIAL_POSTS);
+    setAnnouncements(INITIAL_ANNOUNCEMENTS);
+    setPolls(INITIAL_POLLS);
+    setPastPapers(INITIAL_PAST_PAPERS);
+    setNotifications(INITIAL_NOTIFICATIONS);
+    showToast('Platform reset to clean sample data.', 'info');
+  };
 
   // Likes Interaction
   const handleLike = (postId) => {
@@ -67,7 +172,12 @@ export default function App() {
     setPosts((prev) =>
       prev.map((p) => {
         if (p.id === postId) {
-          return { ...p, isBookmarked: !p.isBookmarked };
+          const isBookmarked = !p.isBookmarked;
+          showToast(
+            isBookmarked ? 'Saved to private bookmarks.' : 'Removed from bookmarks.',
+            'info'
+          );
+          return { ...p, isBookmarked };
         }
         return p;
       })
@@ -97,6 +207,7 @@ export default function App() {
         return p;
       })
     );
+    showToast('Comment posted.');
   };
 
   // Delete Comment
@@ -113,6 +224,7 @@ export default function App() {
         return p;
       })
     );
+    showToast('Comment deleted.', 'info');
   };
 
   // Create Post Workflow
@@ -129,7 +241,7 @@ export default function App() {
       authorAvatar: currentUser.avatarUrl,
       content,
       imageUrls,
-      status: isStudent ? 'pending' : 'approved', // Student submissions quarantined in pending status
+      status: isStudent ? 'pending' : 'approved',
       moderatedBy: isStudent ? null : currentUser.fullName,
       moderatedAt: isStudent ? null : new Date().toISOString(),
       likesCount: 0,
@@ -141,10 +253,17 @@ export default function App() {
     };
 
     setPosts([newPost, ...posts]);
+
+    if (isStudent) {
+      showToast('Post submitted! It is in the pending queue awaiting moderator review.', 'info');
+    } else {
+      showToast('Post published directly to campus feed.');
+    }
   };
 
   // Moderation: Approve Post
   const handleApprovePost = (postId) => {
+    const post = posts.find((p) => p.id === postId);
     setPosts((prev) =>
       prev.map((p) => {
         if (p.id === postId) {
@@ -158,6 +277,22 @@ export default function App() {
         return p;
       })
     );
+
+    // Add in-app notification for author
+    if (post) {
+      const notif = {
+        id: `notif-${Date.now()}`,
+        type: 'post_approved',
+        actorName: currentUser.fullName,
+        actorAvatar: currentUser.avatarUrl,
+        message: 'Your campus post was approved and is now visible on the public feed.',
+        timestamp: 'Just now',
+        isRead: false,
+      };
+      setNotifications([notif, ...notifications]);
+    }
+
+    showToast('Post approved for public campus feed!');
   };
 
   // Moderation: Reject Post
@@ -176,6 +311,7 @@ export default function App() {
         return p;
       })
     );
+    showToast(`Post rejected (${reason}).`, 'error');
   };
 
   // Poll Voting
@@ -196,26 +332,31 @@ export default function App() {
         return poll;
       })
     );
+    showToast('Your vote has been recorded securely!');
   };
 
   // Add Poll
   const handleCreatePoll = (newPoll) => {
     setPolls([newPoll, ...polls]);
+    showToast('New campus poll launched!');
   };
 
   // Add Announcement (Faculty/Admin only)
   const handleAddAnnouncement = (newAnnouncement) => {
     setAnnouncements([newAnnouncement, ...announcements]);
+    showToast('Official university notice published!');
   };
 
   // Upload Past Paper
   const handleUploadPaper = (newPaper) => {
     setPastPapers([newPaper, ...pastPapers]);
+    showToast('Past exam paper uploaded to academic repository.');
   };
 
   // Notifications
   const handleMarkAllRead = () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+    showToast('All notifications marked as read.', 'info');
   };
 
   const pendingPostsCount = posts.filter((p) => p.status === 'pending').length;
@@ -224,10 +365,11 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#080c14] text-slate-100 flex flex-col font-sans selection:bg-blue-600/30">
       
-      {/* Role Switcher Pill Bar for Phase 2 & 3 Verification */}
+      {/* Role Switcher Pill Bar for Instant Testing Without Backend */}
       <RoleSwitcher
         currentUser={currentUser}
         onSelectUser={(u) => setDemoUser(u)}
+        onResetData={handleResetData}
       />
 
       {/* Mobile Top Header */}
@@ -336,7 +478,10 @@ export default function App() {
               onBookmark={handleBookmark}
               onAddComment={handleAddComment}
               onDeleteComment={handleDeleteComment}
-              onSaveProfile={updateProfile}
+              onSaveProfile={(updates) => {
+                updateProfile(updates);
+                showToast('Academic profile updated.');
+              }}
             />
           )}
 
@@ -383,6 +528,9 @@ export default function App() {
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
       />
+
+      {/* Toast Notification */}
+      <Toast toast={toast} onClose={() => setToast(null)} />
     </div>
   );
 }
