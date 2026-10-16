@@ -12,7 +12,8 @@ import {
   User, 
   ShieldAlert,
   PlusCircle,
-  GraduationCap
+  GraduationCap,
+  LogIn
 } from 'lucide-react';
 import { AU_CAMPUS_NAME, APP_NAME } from '../../constants/auKamra';
 
@@ -22,7 +23,9 @@ export default function LeftSidebar({
   currentUser, 
   pendingPostsCount, 
   unreadNotifsCount,
-  onOpenCreatePost 
+  onOpenCreatePost,
+  onOpenAuth,
+  isDemoMode 
 }) {
   const isModeratorOrAdmin = currentUser.role === 'moderator' || currentUser.role === 'admin';
 
@@ -154,6 +157,15 @@ export default function LeftSidebar({
           {currentUser.role}
         </span>
       </div>
+
+      {/* Auth / Account Switcher Trigger */}
+      <button
+        onClick={onOpenAuth}
+        className="w-full mt-2 py-1.5 px-3 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 text-[11px] text-blue-400 font-medium flex items-center justify-center gap-1.5 transition-all"
+      >
+        <LogIn className="w-3.5 h-3.5" />
+        <span>{isDemoMode ? 'Connect Account (.edu)' : 'Account Settings'}</span>
+      </button>
     </aside>
   );
 }

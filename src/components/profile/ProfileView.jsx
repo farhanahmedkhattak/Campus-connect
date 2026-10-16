@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import PostCard from '../feed/PostCard';
+import EditProfileModal from './EditProfileModal';
 import { 
   User, 
   GraduationCap, 
@@ -17,9 +18,11 @@ export default function ProfileView({
   onLike, 
   onBookmark, 
   onAddComment, 
-  onDeleteComment 
+  onDeleteComment,
+  onSaveProfile 
 }) {
   const [profileTab, setProfileTab] = useState('posts'); // 'posts', 'pending', 'bookmarks'
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const userPosts = posts.filter((p) => p.authorId === currentUser.id);
   const approvedPosts = userPosts.filter((p) => p.status === 'approved');
@@ -42,6 +45,13 @@ export default function ProfileView({
             />
 
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsEditModalOpen(true)}
+                className="px-3 py-1 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-xs font-medium text-slate-300 hover:text-white transition-all flex items-center gap-1.5"
+              >
+                <span>Edit Profile</span>
+              </button>
+
               <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-xl border ${
                 currentUser.role === 'admin'
                   ? 'bg-purple-500/20 text-purple-300 border-purple-500/30'
@@ -211,6 +221,14 @@ export default function ProfileView({
           )
         )}
       </div>
+
+      {/* Edit Profile Dialog */}
+      <EditProfileModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        currentUser={currentUser}
+        onSaveProfile={onSaveProfile}
+      />
     </div>
   );
 }

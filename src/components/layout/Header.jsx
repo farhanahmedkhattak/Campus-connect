@@ -1,5 +1,5 @@
 import React from 'react';
-import { GraduationCap, Bell, Menu, Shield } from 'lucide-react';
+import { GraduationCap, Bell, Menu, Shield, LogIn } from 'lucide-react';
 import { AU_CAMPUS_NAME, APP_NAME } from '../../constants/auKamra';
 
 export default function Header({ 
@@ -7,7 +7,8 @@ export default function Header({
   currentUser, 
   unreadNotifsCount, 
   onSelectTab, 
-  pendingPostsCount 
+  pendingPostsCount,
+  onOpenAuth 
 }) {
   const isModeratorOrAdmin = currentUser.role === 'moderator' || currentUser.role === 'admin';
 

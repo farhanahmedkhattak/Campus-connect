@@ -17,7 +17,9 @@ import BookmarksView from './components/bookmarks/BookmarksView';
 import NotificationsView from './components/notifications/NotificationsView';
 import ProfileView from './components/profile/ProfileView';
 import ModerationView from './components/moderation/ModerationView';
+import AuthModal from './components/auth/AuthModal';
 
+import { useAuth } from './context/AuthContext';
 import { DEMO_USERS } from './constants/auKamra';
 import { 
   INITIAL_POSTS, 
@@ -30,9 +32,11 @@ import {
 } from './mockData/initialData';
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState(DEMO_USERS.student);
+  const { profile, setDemoUser, isDemoMode, updateProfile } = useAuth();
+  const currentUser = profile;
   const [currentTab, setCurrentTab] = useState('home');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
   // Core App State
   const [posts, setPosts] = useState(INITIAL_POSTS);
@@ -220,10 +224,10 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#080c14] text-slate-100 flex flex-col font-sans selection:bg-blue-600/30">
       
-      {/* Role Switcher Pill Bar for Phase 2 Verification */}
+      {/* Role Switcher Pill Bar for Phase 2 & 3 Verification */}
       <RoleSwitcher
         currentUser={currentUser}
-        onSelectUser={(u) => setCurrentUser(u)}
+        onSelectUser={(u) => setDemoUser(u)}
       />
 
       {/* Mobile Top Header */}
@@ -233,6 +237,7 @@ export default function App() {
         unreadNotifsCount={unreadNotifsCount}
         onSelectTab={setCurrentTab}
         pendingPostsCount={pendingPostsCount}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
       />
 
       {/* Main 3-Column Desktop / 1-Column Mobile Layout */}
@@ -247,6 +252,8 @@ export default function App() {
             pendingPostsCount={pendingPostsCount}
             unreadNotifsCount={unreadNotifsCount}
             onOpenCreatePost={() => setIsCreateModalOpen(true)}
+            onOpenAuth={() => setIsAuthModalOpen(true)}
+            isDemoMode={isDemoMode}
           />
         </div>
 
@@ -329,6 +336,7 @@ export default function App() {
               onBookmark={handleBookmark}
               onAddComment={handleAddComment}
               onDeleteComment={handleDeleteComment}
+              onSaveProfile={updateProfile}
             />
           )}
 
@@ -368,6 +376,12 @@ export default function App() {
         onClose={() => setIsCreateModalOpen(false)}
         onSubmitPost={handleCreatePost}
         currentUser={currentUser}
+      />
+
+      {/* Sign In & Student Registration Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
       />
     </div>
   );
